@@ -1,0 +1,121 @@
+import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from datetime import datetime, timedelta
+
+background = """
+<style>
+[data-testid="stAppViewContainer"] > .main {
+    background-image: url("https://static.vecteezy.com/system/resources/previews/017/111/123/non_2x/healthy-llifestyle-elements-frame-background-free-vector.jpg");
+    background-size: 100vw 100vh;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+</style>
+"""
+
+st.markdown(background, unsafe_allow_html=True)
+
+def initialize_session_state():
+    if 'weekly_data' not in st.session_state:
+        st.session_state.weekly_data = []
+
+def collect_data():
+    st.title("Weekly Health Tracker")
+    st.header("Please enter your daily data for the past 7 days")
+
+    weekly_entries = []
+    for day in range(1, 8):
+        st.subheader(f"Day {day}")
+        calories = st.number_input(f"Calories for Day {day} (kcal)", min_value=0, step=1, key=f"calories_{day}")
+        carbs = st.number_input(f"Carbohydrates for Day {day} (g)", min_value=0.0, step=0.1, key=f"carbs_{day}")
+        protein = st.number_input(f"Protein for Day {day} (g)", min_value=0.0, step=0.1, key=f"protein_{day}")
+        fat = st.number_input(f"Fat for Day {day} (g)", min_value=0.0, step=0.1, key=f"fat_{day}")
+        steps = st.number_input(f"Steps for Day {day}", min_value=0, step=1, key=f"steps_{day}")
+        water_intake = st.number_input(f"Water Intake for Day {day} (liters)", min_value=0.0, step=0.1, key=f"water_intake_{day}")
+        workout_type = st.selectbox(f"Workout Type for Day {day}", ["None", "Cardio", "Strength Training", "Flexibility", "Balance", "Other"], key=f"workout_type_{day}")
+        workout_duration = st.number_input(f"Workout Duration for Day {day} (minutes)", min_value=0, step=1, key=f"workout_duration_{day}")
+
+        daily_entry = {
+            "Day": f"Day {day}",
+            "Calories": calories,
+            "Carbs": carbs,
+            "Protein": protein,
+            "Fat": fat,
+            "Steps": steps,
+            "Water Intake": water_intake,
+            "Workout Type": workout_type,
+            "Workout Duration": workout_duration
+        }
+        weekly_entries.append(daily_entry)
+
+    if st.button("Submit"):
+        st.session_state.weekly_data = weekly_entries
+        st.success("Data for the past 7 days has been saved!")
+
+def display_data():
+    st.write("### Summary of Your Weekly Data")
+    if st.session_state.weekly_data:
+        df = pd.DataFrame(st.session_state.weekly_data)
+        st.dataframe(df)
+
+        total_carbs = df['Carbs'].sum()
+        total_protein = df['Protein'].sum()
+        total_fat = df['Fat'].sum()
+        
+        macro_labels = ['Carbs', 'Protein', 'Fat']
+        macro_sizes = [total_carbs, total_protein, total_fat]
+        macro_colors = ['#ff9999', '#66b3ff', '#99ff99']
+        
+        fig1, ax1 = plt.subplots()
+        ax1.pie(macro_sizes, labels=macro_labels, colors=macro_colors, autopct='%1.1f%%')
+        ax1.set_title('Macronutrient Distribution (Last 7 Days)')
+        st.pyplot(fig1)
+
+        fig2, ax2 = plt.subplots()
+        df_workouts = df[df['Workout Type'] != 'None']  
+        ax2.hist(df_workouts['Workout Type'], bins=len(df_workouts['Workout Type'].unique()), edgecolor='black')
+        ax2.set_xlabel('Workout Type')
+        ax2.set_ylabel('Frequency')
+        ax2.set_title('Workout Types Frequency')
+        st.pyplot(fig2)
+
+        fig3, ax3 = plt.subplots()
+        ax3.plot(df['Day'], df['Calories'], marker='o')
+        ax3.set_xlabel('Day')
+        ax3.set_ylabel('Calories (kcal)')
+        ax3.set_title('Calories Over the Last 7 Days')
+        ax3.grid(True)
+        st.pyplot(fig3)
+
+        fig4, ax4 = plt.subplots()
+        ax4.plot(df['Day'], df['Water Intake'], marker='o', color='b')
+        ax4.set_xlabel('Day')
+        ax4.set_ylabel('Water Intake (liters)')
+        ax4.set_title('Water Intake Over the Last 7 Days')
+        ax4.grid(True)
+        st.pyplot(fig4)
+
+        fig5, ax5 = plt.subplots()
+        ax5.plot(df['Day'], df['Steps'], marker='o', color='g')
+        ax5.set_xlabel('Day')
+        ax5.set_ylabel('Steps')
+        ax5.set_title('Steps Over the Last 7 Days')
+        ax5.grid(True)
+        st.pyplot(fig5)
+
+        fig6, ax6 = plt.subplots()
+        ax6.plot(df['Day'], df['Workout Duration'], marker='o', color='r')
+        ax6.set_xlabel('Day')
+        ax6.set_ylabel('Workout Duration (minutes)')
+        ax6.set_title('Workout Duration Over the Last 7 Days')
+        ax6.grid(True)
+        st.pyplot(fig6)
+
+def main():
+    initialize_session_state()
+    collect_data()
+    display_data()
+
+if __name__ == "__main__":
+    main()
